@@ -1,0 +1,519 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Particles & Radiation Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Familjen+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lab-bench pages — sticky spec-referenced tab strip; each topic = oscilloscope-style sim + breakdown side by side, flip-card questions beneath. */
+:root{
+  --paper:#f4f7f6; --surface:#ffffff; --ink:#16212c; --muted:#56636f; --line:#d5dde2; --grid:#e6edf0;
+  --accent:#1f5fbf; --accent-soft:#e3ecfa; --wave2:#cf5c17; --node:#c2263d; --good:#1b7a4c; --good-soft:#e2f3ea; --warn-soft:#fbeee4;
+  --f-display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f151b; --surface:#151d25; --ink:#e5ecf1; --muted:#93a1ad; --line:#2a3540; --grid:#1c2630;
+  --accent:#72a6ff; --accent-soft:#1a2a44; --wave2:#ff9a5c; --node:#ff6b80; --good:#4cc38a; --good-soft:#15302a; --warn-soft:#33241a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f151b; --surface:#151d25; --ink:#e5ecf1; --muted:#93a1ad; --line:#2a3540; --grid:#1c2630;
+  --accent:#72a6ff; --accent-soft:#1a2a44; --wave2:#ff9a5c; --node:#ff6b80; --good:#4cc38a; --good-soft:#15302a; --warn-soft:#33241a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 14px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4.4vw,42px);line-height:1.08;margin:6px 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h1 .sig{display:inline-block;vertical-align:middle;margin-left:6px}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.15;margin:0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0 0 8px}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.tabrow{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding-block:8px 0}
+.tab{flex:0 0 auto;border:1px solid transparent;border-bottom:none;background:none;color:var(--muted);font:inherit;cursor:pointer;padding:8px 14px 10px;border-radius:8px 8px 0 0;text-align:left;display:flex;flex-direction:column;gap:1px;position:relative;top:1px}
+.tab .ref{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em}
+.tab .nm{font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--ink)}
+.tab:hover .nm{color:var(--accent)}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--accent)}
+.tab[aria-selected="true"] .nm{color:var(--accent)}
+.tab.practice .nm::before{content:"✎ ";}
+.tab:focus-visible,button:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+main{padding-block:22px 60px}
+.panel-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:8px 20px;margin-bottom:18px}
+.panel-head p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.lab{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+
+.scope{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.scope-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.scope canvas{display:block;width:100%}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px;padding:14px 14px 4px}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted)}
+.ctl label output{font-family:var(--f-mono);color:var(--ink);font-size:13px}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);margin:4px 0 0}
+.toggles{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:var(--surface);color:var(--muted);font:inherit;font-size:14px;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);padding:6px 4px}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border-top:1px solid var(--line);margin-top:12px}
+.readout div{background:var(--surface);padding:10px 12px}
+.readout dt{font-size:12px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.03em}
+.readout dd{margin:2px 0 0;font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums}
+.status{padding:10px 14px;font-size:14px;border-top:1px solid var(--line)}
+.status b{font-family:var(--f-display)}
+.pause{border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;font-size:12px;font-family:var(--f-mono);padding:3px 10px;border-radius:6px;cursor:pointer}
+
+.notes{display:flex;flex-direction:column;gap:16px;min-width:0}
+.eqbox{background:var(--accent-soft);border-radius:10px;padding:12px 14px}
+.eqbox h3{font-size:14px;font-family:var(--f-mono);font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.eq{font-family:var(--f-mono);font-size:15px;display:flex;flex-wrap:wrap;gap:6px 22px}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px}
+.steps li::before{content:counter(s);font-family:var(--f-mono);font-size:12px;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:grid;place-items:center;margin-top:1px}
+.traps{background:var(--warn-soft);border-radius:10px;padding:12px 14px}
+.traps h3{color:var(--wave2);font-size:14px;font-family:var(--f-mono);font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.traps ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.try{font-size:14px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.try b{color:var(--ink)}
+
+.qhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;margin:36px 0 12px;border-top:1px solid var(--line);padding-top:22px}
+.qhead p{margin:0;color:var(--muted);font-size:14px}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+@media (max-width:420px){.qgrid{grid-template-columns:minmax(0,1fr)}}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.qcard.flipped{border-color:var(--good);background:linear-gradient(var(--good-soft),var(--good-soft)) top/100% 4px no-repeat, var(--surface)}
+.qmeta{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.qmeta .mk{color:var(--accent)}
+.qcard.flipped .qmeta .side{color:var(--good)}
+.qbody{flex:1;min-width:0}
+.qbody p{margin:0 0 8px}
+.qbody p:last-child{margin-bottom:0}
+.qbody ol,.qbody ul{margin:4px 0 8px;padding-left:20px}
+.qbody .opts{list-style:upper-alpha;padding-left:24px}
+.ans .work{font-family:var(--f-mono);font-size:13.5px;background:var(--paper);border-radius:8px;padding:8px 10px;margin:6px 0;overflow-x:auto;white-space:pre-wrap}
+.ans .final{font-weight:700;color:var(--good)}
+.flip{align-self:flex-start;border:1px solid var(--accent);background:none;color:var(--accent);font:inherit;font-size:14px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer}
+.flip:hover{background:var(--accent);color:var(--surface)}
+.qcard.flipped .flip{border-color:var(--good);color:var(--good)}
+.qcard.flipped .flip:hover{background:var(--good);color:var(--surface)}
+
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tally{margin-left:auto;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.ghost{border:1px solid var(--line);background:none;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:8px;cursor:pointer}
+.tagline{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+sub,sup{font-size:.72em;line-height:0}
+footer{color:var(--muted);font-size:13px;padding-block:0 40px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+
+.extra{padding:12px 14px 2px;display:flex;flex-direction:column;gap:10px}
+.extra select,.extra input[type=number],.extra input[type=text]{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
+.extra .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.extra .row label{font-size:14px;color:var(--muted)}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--surface);font:inherit;font-size:14px;font-weight:700;padding:6px 14px;border-radius:8px;cursor:pointer}
+.btn.alt{background:none;color:var(--accent)}
+.mini{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.mini th,.mini td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left}
+.mini th{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500}
+.tblwrap{overflow-x:auto}
+.ok{color:var(--good);font-weight:700}.bad{color:var(--node);font-weight:700}
+.crumb{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-decoration:none}
+.crumb:hover{color:var(--accent)}
+</style>
+<div id="app"></div>
+<script>
+/* ---------- shared helpers ---------- */
+const $=id=>document.getElementById(id);
+const sims={},Q={},TOPICS=[];let SECTION={};
+let C={};
+function readTokens(){const s=getComputedStyle(document.documentElement);
+  ['paper','surface','ink','muted','line','grid','accent','accent-soft','wave2','node','good'].forEach(n=>C[n]=s.getPropertyValue('--'+n).trim());}
+function hexRgb(h){h=(h||'#000').replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]}
+function alpha(hex,a){const[r,g,b]=hexRgb(hex);return `rgba(${r},${g},${b},${a})`}
+function nmRgb(nm){let r=0,g=0,b=0;
+  if(nm<440){r=-(nm-440)/40;b=1}else if(nm<490){g=(nm-440)/50;b=1}else if(nm<510){g=1;b=-(nm-510)/20}
+  else if(nm<580){r=(nm-510)/70;g=1}else if(nm<645){r=1;g=-(nm-645)/65}else{r=1}
+  let f=nm<420?0.3+0.7*(nm-380)/40:nm>680?0.3+0.7*(780-nm)/100:1;
+  return [Math.round(255*r*f),Math.round(255*g*f),Math.round(255*b*f)];}
+const rgbStr=(c,a=1)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const fmt=(x,d=2)=>Number(x).toFixed(d);
+const SUP='⁰¹²³⁴⁵⁶⁷⁸⁹';
+function sci(x,d=2){if(!isFinite(x))return '—';if(x===0)return'0';let e=Math.floor(Math.log10(Math.abs(x)));let m=x/10**e;if(Math.abs(+m.toFixed(d))>=10){m/=10;e++}
+  if(e>=-2&&e<=3)return (+x.toPrecision(d+1)).toString();
+  return `${m.toFixed(d)} × 10${String(e).replace('-','⁻').replace(/\d/g,c=>SUP[c])}`}
+function sizeCanvas(c,aspect,minH){
+  const w=c.clientWidth||c.parentElement.clientWidth||600; const h=Math.max(minH||0,Math.round(w*aspect));
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(c._w!==w||c._h!==h){c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c._w=w;c._h=h}
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return{ctx,w,h};}
+function bg(ctx,w,h,grid=true){ctx.fillStyle=C.surface;ctx.fillRect(0,0,w,h);if(!grid)return;ctx.strokeStyle=C.grid;ctx.lineWidth=1;ctx.beginPath();
+  for(let x=0.5;x<w;x+=20){ctx.moveTo(x,0);ctx.lineTo(x,h)}for(let y=0.5;y<h;y+=20){ctx.moveTo(0,y);ctx.lineTo(w,y)}ctx.stroke();}
+function label(ctx,t,x,y,col,align='center',size=12,weight=500){ctx.fillStyle=col||C.ink;ctx.font=`${weight} ${size}px "JetBrains Mono", ui-monospace, monospace`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillText(t,x,y)}
+function dot(ctx,x,y,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
+function line(ctx,x1,y1,x2,y2,col,w=1.5,dash){ctx.strokeStyle=col;ctx.lineWidth=w;if(dash)ctx.setLineDash(dash);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();if(dash)ctx.setLineDash([])}
+function arrowHead(ctx,x,y,ang,s,col){ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-s*Math.cos(ang-0.4),y-s*Math.sin(ang-0.4));ctx.lineTo(x-s*Math.cos(ang+0.4),y-s*Math.sin(ang+0.4));ctx.closePath();ctx.fill()}
+function arrow(ctx,x1,y1,x2,y2,col,w=2,head=9){line(ctx,x1,y1,x2,y2,col,w);if(Math.hypot(x2-x1,y2-y1)>2)arrowHead(ctx,x2,y2,Math.atan2(y2-y1,x2-x1),head,col)}
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+/* graph helper: box {x,y,w,h} in px, ranges [min,max] */
+function Plot(ctx,box,xr,yr){const P={
+  X:v=>box.x+(v-xr[0])/(xr[1]-xr[0])*box.w, Y:v=>box.y+box.h-(v-yr[0])/(yr[1]-yr[0])*box.h,
+  axes(xlab,ylab,xt=[],yt=[],xf=v=>v,yf=v=>v){ctx.strokeStyle=C.muted;ctx.lineWidth=1;ctx.beginPath();
+    const y0=yr[0]<=0&&yr[1]>=0?P.Y(0):box.y+box.h, x0=xr[0]<=0&&xr[1]>=0?P.X(0):box.x;
+    ctx.moveTo(box.x,y0);ctx.lineTo(box.x+box.w,y0);ctx.moveTo(x0,box.y);ctx.lineTo(x0,box.y+box.h);ctx.stroke();
+    xt.forEach(v=>{const x=P.X(v);line(ctx,x,y0,x,y0+4,C.muted,1);label(ctx,xf(v),x,y0+13,C.muted,'center',10)});
+    yt.forEach(v=>{const y=P.Y(v);line(ctx,x0-4,y,x0,y,C.muted,1);label(ctx,yf(v),x0-7,y,C.muted,'right',10)});
+    if(xlab)label(ctx,xlab,box.x+box.w,y0+(y0>box.y+box.h-20?-10:26),C.muted,'right',10);
+    if(ylab)label(ctx,ylab,x0+6,box.y-8,C.muted,'left',10);},
+  curve(f,col,w=2,a=xr[0],b=xr[1],n=200){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();let first=true;
+    for(let i=0;i<=n;i++){const x=a+(b-a)*i/n,y=f(x);if(!isFinite(y)){first=true;continue}const py=Math.max(box.y-2,Math.min(box.y+box.h+2,P.Y(y)));first?ctx.moveTo(P.X(x),py):ctx.lineTo(P.X(x),py);first=false}ctx.stroke();},
+  pts(arr,col,w=2){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();arr.forEach((p,i)=>i?ctx.lineTo(P.X(p[0]),P.Y(p[1])):ctx.moveTo(P.X(p[0]),P.Y(p[1])));ctx.stroke();}
+ };return P;}
+function segVal(id){const b=document.querySelector(`#${id} button[aria-pressed="true"]`);return b?b.dataset.v:null}
+function setSeg(id,v){document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v))}
+const num=id=>+$(id).value;
+function setOut(id,txt){const o=$(id+'-o');if(o)o.textContent=txt}
+function setLabel(id,txt){const l=document.querySelector(`label[for="${id}"]`);if(l)l.firstChild.textContent=txt+' '}
+function topic(t){TOPICS.push(t)}
+
+// TITLE: Particles & Radiation Lab
+SECTION={code:'Section 3.2 Particles and radiation',name:'particles and radiation',title:'Particles & Radiation Lab',
+ lede:'Photons, energy levels, particle interactions and the strange world of exchange particles. Each tab has a simulation, a breakdown of the hard bits, and questions with hidden answers.',
+ footer:'Constants: h = 6.63 × 10⁻³⁴ J s, e = 1.60 × 10⁻¹⁹ C, mₑ = 9.11 × 10⁻³¹ kg, mₚ = 1.67 × 10⁻²⁷ kg, c = 3.00 × 10⁸ m s⁻¹.'};
+const H=6.63e-34,E=1.6e-19,ME=9.11e-31,MP=1.67e-27,CL=3e8;
+function fcol(f){const nm=CL/f*1e9;return nm<380?[150,90,255]:nm>750?[160,30,30]:nmRgb(nm)}
+
+/* ===== PHOTOELECTRIC ===== */
+topic({id:'photoelectric',ref:'3.2.2.1',name:'Photoelectric effect',short:'Photoelectric',eyebrow:'Photons',title:'The photoelectric effect',
+ intro:'Shine light on a metal. Change the frequency and intensity and see when electrons are released and how fast they leave.',animated:true,
+ bar:'one photon → at most one electron',aspect:0.5,minH:250,
+ segs:[{id:'pe-metal',opts:[['2.1','Caesium φ = 2.1 eV'],['2.3','Sodium φ = 2.3 eV'],['4.3','Zinc φ = 4.3 eV']]}],
+ controls:[{id:'pe-f',label:'Frequency f',min:2,max:15,step:0.1,value:7,fmt:v=>fmt(v,1)+' × 10¹⁴ Hz'},{id:'pe-I',label:'Intensity',min:1,max:10,step:1,value:4,fmt:v=>v+' / 10'}],
+ readouts:[{id:'pe-hf',label:'photon energy hf'},{id:'pe-ek',label:'E<sub>k(max)</sub>'},{id:'pe-vs',label:'stopping potential'},{id:'pe-f0',label:'threshold f₀'}],status:true,
+ eqs:['hf = φ + E<sub>k(max)</sub>','E<sub>k(max)</sub> = eV<sub>s</sub>','f₀ = φ / h','1 eV = 1.60 × 10⁻¹⁹ J'],
+ steps:['Light arrives as <b>photons</b>, each with energy hf. One photon interacts with one electron.','The <b>work function φ</b> is the minimum energy needed to remove an electron from the metal surface.',
+  'If hf < φ no electrons are emitted, <b>however intense</b> the light. The threshold frequency is f₀ = φ/h.','Extra energy becomes kinetic energy. Electrons from deeper inside lose more on the way out, so hf − φ is the <b>maximum</b> kinetic energy.',
+  'Higher <b>intensity</b> means more photons per second, so more electrons per second (bigger current), but each photon has the same energy so E<sub>k(max)</sub> does not change.',
+  'A graph of E<sub>k(max)</sub> against f is a straight line: gradient h, x-intercept f₀, y-intercept −φ. The <b>stopping potential</b> V<sub>s</sub> is the p.d. that just stops the fastest electrons.'],
+ traps:['Saying brighter light makes electrons faster.','Forgetting to convert eV to J (or back).','Calling φ "the energy of the electron". It is a property of the metal.','Wave theory fails because it predicts emission at any frequency, given time.'],
+ tryThis:'on zinc, drop the frequency below the threshold and turn the intensity to 10. What happens?'});
+sims.photoelectric=(()=>{let ph=[],el=[],acc=0,st={};
+ return{update(){st.f=num('pe-f')*1e14;st.I=num('pe-I');st.phi=+segVal('pe-metal');const hfe=H*st.f/E,ek=hfe-st.phi;st.ek=ek;
+   $('pe-hf').textContent=fmt(hfe)+' eV';$('pe-ek').textContent=ek>0?`${fmt(ek)} eV = ${sci(ek*E)} J`:'none emitted';$('pe-vs').textContent=ek>0?fmt(ek)+' V':'—';$('pe-f0').textContent=sci(st.phi*E/H)+' Hz';
+   $('photoelectric-status').innerHTML=ek>0?`<b>Electrons emitted.</b> Each photon has more energy than the work function. Raising the intensity increases how many electrons, not how fast.`:`<b>No emission.</b> hf is less than φ. More intense light only sends more photons that are each still too weak.`;},
+  step(dt){acc+=dt*st.I*3;while(acc>1){acc--;ph.push({x:0.02+Math.random()*0.05,y:0.05+Math.random()*0.2,t:0,ty:0.25+Math.random()*0.6})}
+   ph.forEach(p=>{p.t+=dt*0.9});ph=ph.filter(p=>{if(p.t>=1){if(st.ek>0)el.push({x:0.36,y:p.ty,vx:(0.15+0.25*Math.sqrt(st.ek)*Math.random()),vy:(Math.random()-0.5)*0.1});return false}return true});
+   el.forEach(e=>{e.x+=e.vx*dt;e.y+=e.vy*dt});el=el.filter(e=>e.x<0.6);},
+  draw(ctx,w,h,t){bg(ctx,w,h);const sw=w*0.6;const col=fcol(st.f);
+   ctx.fillStyle=C.muted;ctx.fillRect(sw*0.6,h*0.15,10,h*0.75);label(ctx,'metal',sw*0.6+5,h*0.95,C.muted,'center',10);
+   dot(ctx,w*0.04,h*0.1,10,rgbStr(col));
+   ph.forEach(p=>{const x0=p.x*w,y0=p.y*h,x1=sw*0.6,y1=p.ty*h,x=x0+(x1-x0)*p.t,y=y0+(y1-y0)*p.t,a=Math.atan2(y1-y0,x1-x0);
+    ctx.strokeStyle=rgbStr(col);ctx.lineWidth=1.8;ctx.beginPath();for(let s=-14;s<=0;s+=1){const px=x+s*Math.cos(a)-Math.sin(a)*3*Math.sin(s*1.2+t*20),py=y+s*Math.sin(a)+Math.cos(a)*3*Math.sin(s*1.2+t*20);s===-14?ctx.moveTo(px,py):ctx.lineTo(px,py)}ctx.stroke()});
+   el.forEach(e=>{dot(ctx,e.x*w+10,e.y*h,4,C.accent)});label(ctx,'e⁻',sw*0.6+40,h*0.1,C.accent,'left',12);
+   const P=Plot(ctx,{x:w*0.66,y:30,w:w*0.31,h:h-70},[0,15],[-5,5]);P.axes('f / 10¹⁴ Hz','Eₖ / eV',[5,10,15],[-4,-2,2,4]);
+   const g=H*1e14/E;ctx.setLineDash([4,4]);P.curve(x=>g*x-st.phi,C.muted,1.2,0,st.phi/g);ctx.setLineDash([]);P.curve(x=>g*x-st.phi,C.wave2,2.2,st.phi/g,15);
+   dot(ctx,P.X(st.phi/g),P.Y(0),4,C.node);label(ctx,'f₀',P.X(st.phi/g),P.Y(0)+14,C.node,'center',10);label(ctx,'−φ',P.X(0)+16,P.Y(-st.phi),C.node,'left',10);
+   const fx=st.f/1e14;if(st.ek>0)dot(ctx,P.X(fx),P.Y(st.ek),5,C.accent);else dot(ctx,P.X(fx),P.Y(0),5,C.muted);}}})();
+Q.photoelectric=[
+ {m:3,q:`<p>Light of frequency 6.0 × 10¹⁴ Hz falls on caesium (φ = 2.1 eV). Calculate the maximum kinetic energy of the emitted electrons in joules.</p>`,a:`<div class="work">hf = 6.63×10⁻³⁴ × 6.0×10¹⁴ = 3.98 × 10⁻¹⁹ J
+φ = 2.1 × 1.60×10⁻¹⁹ = 3.36 × 10⁻¹⁹ J
+Eₖ = 3.98 − 3.36 (× 10⁻¹⁹)</div><p class="final">6.2 × 10⁻²⁰ J</p>`},
+ {m:2,q:`<p>Calculate the threshold frequency for zinc, φ = 4.3 eV.</p>`,a:`<div class="work">f₀ = φ/h = 4.3 × 1.60×10⁻¹⁹ / 6.63×10⁻³⁴</div><p class="final">1.0 × 10¹⁵ Hz</p>`},
+ {m:3,q:`<p>Explain why increasing the intensity of the light increases the photoelectric current but not the maximum kinetic energy of the electrons.</p>`,a:`<ul><li>Higher intensity = more photons per second, so more electrons emitted per second: bigger current.</li><li>Each photon still has energy hf (frequency unchanged), and one photon gives its energy to one electron.</li><li>So E<sub>k(max)</sub> = hf − φ is unchanged.</li></ul>`},
+ {m:2,q:`<p>Explain why the existence of a threshold frequency cannot be explained by a wave model of light.</p>`,a:`<p>In the wave model, energy arrives continuously, so electrons should gain enough energy eventually at <b>any</b> frequency if the light is left on long enough. In fact, below f₀ there is no emission at all, and above it emission is instant.</p>`},
+ {m:2,q:`<p>A graph of E<sub>k(max)</sub> against frequency is drawn for a metal. What do the gradient and the intercepts represent?</p>`,a:`<p>Gradient = <b>h</b>; x-intercept = threshold frequency <b>f₀</b>; y-intercept = <b>−φ</b>.</p>`}];
+
+/* ===== ENERGY LEVELS ===== */
+const LEV=n=>-13.6/(n*n);
+topic({id:'levels',ref:'3.2.2.2',name:'Energy levels & spectra',short:'Energy levels',eyebrow:'Collisions of electrons with atoms',title:'Energy levels and line spectra',
+ intro:'Hydrogen\'s energy levels. Pick two levels to see the photon emitted or absorbed and where its line appears in the spectrum.',animated:true,
+ bar:'hydrogen: Eₙ = −13.6/n² eV',aspect:0.56,minH:260,
+ segs:[{id:'lv-mode',opts:[['em','Emission'],['ab','Absorption']]}],
+ controls:[{id:'lv-hi',label:'Upper level',min:2,max:6,step:1,value:3,fmt:v=>'n = '+v},{id:'lv-lo',label:'Lower level',min:1,max:5,step:1,value:2,fmt:v=>'n = '+v}],
+ readouts:[{id:'lv-de',label:'ΔE'},{id:'lv-dj',label:'ΔE (J)'},{id:'lv-lam',label:'λ = hc/ΔE'},{id:'lv-reg',label:'region'}],
+ eqs:['hf = E₁ − E₂','λ = hc / ΔE','ionisation energy (H) = 13.6 eV'],
+ steps:['Electrons in atoms can only have certain <b>discrete energies</b>. Levels are negative: 0 eV means the electron has just escaped (ionisation).',
+  '<b>Excitation</b>: an electron moves up a level. A photon is only absorbed if its energy <b>exactly</b> matches a gap. A colliding electron can excite with any energy ≥ the gap and keeps the rest.',
+  '<b>De-excitation</b>: the electron drops down and emits a photon with hf = the energy difference.','Each element has its own set of gaps, so its own <b>line spectrum</b>. Lines are evidence that energy levels are discrete.',
+  '<b>Fluorescent tube</b>: electrons collide with mercury atoms → excitation → UV photons emitted → absorbed by phosphor coating → re-emitted as visible light in smaller steps.'],
+ traps:['Using the energy of one level instead of the difference between two.','Thinking an atom can absorb a photon with "enough" energy. It must match exactly (unless it ionises).','From level n there are n(n−1)/2 possible downward transitions.'],
+ tryThis:'find every transition that gives a visible line. Which lower level do they all share?'});
+sims.levels={update(){let hi=num('lv-hi'),lo=num('lv-lo');if(lo>=hi){lo=hi-1;$('lv-lo').value=lo;setOut('lv-lo','n = '+lo)}this.hi=hi;this.lo=lo;
+  const de=LEV(hi)-LEV(lo),lam=H*CL/(de*E);this.lam=lam;$('lv-de').textContent=fmt(de)+' eV';$('lv-dj').textContent=sci(de*E)+' J';$('lv-lam').textContent=fmt(lam*1e9,0)+' nm';
+  $('lv-reg').textContent=lam<380e-9?'ultraviolet':lam>750e-9?'infrared':'visible';},
+ draw(ctx,w,h,t){bg(ctx,w,h);const em=segVal('lv-mode')==='em';const lx=50,lw=w*0.36,top=24,bot=h-30;const Y=e=>top+(bot-top)*(-e/13.6);
+  line(ctx,lx,Y(0),lx+lw,Y(0),C.muted,1.2,[4,4]);label(ctx,'0 eV  (n = ∞)',lx+lw+6,Y(0),C.muted,'left',10);
+  for(let n=1;n<=6;n++){const y=Y(LEV(n)),on=n===this.hi||n===this.lo;line(ctx,lx,y,lx+lw,y,on?C.ink:C.line,on?2.5:1.5);
+   if(n<=4)label(ctx,'n='+n,lx-6,y,C.ink,'right',10);if(n<=4)label(ctx,fmt(LEV(n))+' eV',lx+lw+6,y,C.muted,'left',10)}
+  const y1=Y(LEV(this.hi)),y2=Y(LEV(this.lo)),ax=lx+lw*0.45,ph=(t*0.6)%1;
+  arrow(ctx,ax,em?y1:y2,ax,em?y2+3:y1-3,C.wave2,2.2,9);
+  const ey=em?y1+(y2-y1)*Math.min(1,ph*1.6):y2+(y1-y2)*Math.max(0,(ph-0.4)*1.6);dot(ctx,ax,Math.min(Math.max(ey,Math.min(y1,y2)),Math.max(y1,y2)),6,C.accent);
+  const col=this.lam<380e-9?[150,90,255]:this.lam>750e-9?[160,30,30]:nmRgb(this.lam*1e9);
+  const px0=ax+14,py=(y1+y2)/2,pl=lw*0.55;const pos=em?ph:1-ph;ctx.strokeStyle=rgbStr(col);ctx.lineWidth=2;ctx.beginPath();
+  for(let s=0;s<=50;s++){const x=px0+pl*0.2+pl*0.8*pos+s*0.9*(em?1:-1)*0.6,yy=py+5*Math.sin(s*0.8-t*14);s?ctx.lineTo(x,yy):ctx.moveTo(x,yy)}ctx.stroke();
+  // spectrum strip
+  const sx=w*0.6,sw2=w*0.37,sy=h*0.25,shh=h*0.18;for(let i=0;i<sw2;i++){const nm=380+370*i/sw2;ctx.fillStyle=em?C.ink:rgbStr(nmRgb(nm));ctx.fillRect(sx+i,sy,1,shh)}
+  if(em){ctx.fillStyle=C.surface;}
+  for(let a=3;a<=6;a++){const l=H*CL/((LEV(a)-LEV(2))*E)*1e9;const x=sx+(l-380)/370*sw2;ctx.fillStyle=em?rgbStr(nmRgb(l),0.25):alpha(C.ink,0.15);ctx.fillRect(x-1,sy,2,shh)}
+  const lnm=this.lam*1e9;if(lnm>=380&&lnm<=750){const x=sx+(lnm-380)/370*sw2;ctx.fillStyle=em?rgbStr(col):C.ink;ctx.fillRect(x-2,sy,4,shh);label(ctx,fmt(lnm,0)+' nm',x,sy+shh+14,C.ink,'center',11)}
+  else label(ctx,lnm<380?'← off the strip: ultraviolet':'off the strip: infrared →',sx+sw2/2,sy+shh+14,C.wave2,'center',11);
+  label(ctx,em?'emission spectrum (visible)':'absorption spectrum (visible)',sx,sy-12,C.muted,'left',10);label(ctx,'380 nm',sx,sy+shh+30,C.muted,'left',9);label(ctx,'750 nm',sx+sw2,sy+shh+30,C.muted,'right',9);}};
+Q.levels=[
+ {m:3,q:`<p>An electron in hydrogen falls from n = 3 (−1.51 eV) to n = 2 (−3.40 eV). Calculate the wavelength of the photon emitted.</p>`,a:`<div class="work">ΔE = 3.40 − 1.51 = 1.89 eV = 3.02 × 10⁻¹⁹ J
+λ = hc/ΔE = 6.63×10⁻³⁴ × 3.00×10⁸ / 3.02×10⁻¹⁹</div><p class="final">6.6 × 10⁻⁷ m (656 nm, red)</p>`},
+ {m:1,q:`<p>State the ionisation energy of hydrogen in joules, from the ground state (−13.6 eV).</p>`,a:`<div class="work">13.6 × 1.60×10⁻¹⁹</div><p class="final">2.18 × 10⁻¹⁸ J</p>`},
+ {m:3,q:`<p>Hydrogen in its ground state is hit by (a) a photon of energy 11.0 eV and (b) an electron with 11.0 eV of kinetic energy. The first excited state is 10.2 eV above the ground state. Explain what happens in each case.</p>`,a:`<p>(a) The photon is <b>not absorbed</b>: its energy does not exactly match any energy gap (and is less than 13.6 eV, so no ionisation).</p><p>(b) The electron <b>can excite</b> the atom to n = 2: it gives 10.2 eV and leaves with 0.8 eV of kinetic energy.</p>`},
+ {m:4,q:`<p>Explain how a fluorescent tube produces visible light.</p>`,a:`<ul><li>A high p.d. accelerates free electrons through the tube.</li><li>They collide with mercury atoms, exciting their electrons to higher levels.</li><li>The mercury atoms de-excite, emitting <b>UV</b> photons.</li><li>The phosphor coating absorbs the UV and de-excites in smaller steps, emitting <b>visible</b> photons.</li></ul>`},
+ {m:1,q:`<p>An electron is excited to n = 4. How many different photon energies can be emitted as it returns to the ground state?</p>`,a:`<div class="work">4×3/2</div><p class="final">6</p>`}];
+
+/* ===== CONSERVATION ===== */
+const PT={'p':[1,1,0,0,0],'p̄':[-1,-1,0,0,0],'n':[0,1,0,0,0],'n̄':[0,-1,0,0,0],'e⁻':[-1,0,1,0,0],'e⁺':[1,0,-1,0,0],'νₑ':[0,0,1,0,0],'ν̄ₑ':[0,0,-1,0,0],
+ 'μ⁻':[-1,0,0,1,0],'μ⁺':[1,0,0,-1,0],'ν_μ':[0,0,0,1,0],'ν̄_μ':[0,0,0,-1,0],'π⁺':[1,0,0,0,0],'π⁻':[-1,0,0,0,0],'π⁰':[0,0,0,0,0],'K⁺':[1,0,0,0,1],'K⁻':[-1,0,0,0,-1],'K⁰':[0,0,0,0,1],'γ':[0,0,0,0,0]};
+const PRE={'β⁻ decay':[['n'],['p','e⁻','ν̄ₑ']],'β⁺ decay':[['p'],['n','e⁺','νₑ']],'Electron capture':[['p','e⁻'],['n','νₑ']],'Muon decay':[['μ⁻'],['e⁻','ν̄ₑ','ν_μ']],
+ 'K⁺ → μ⁺ + ν_μ':[['K⁺'],['μ⁺','ν_μ']],'K⁺ → π⁺ + π⁰':[['K⁺'],['π⁺','π⁰']],'p + p → p + p + π⁰':[['p','p'],['p','p','π⁰']],'p + p → p + p + K⁺ + K⁻':[['p','p'],['p','p','K⁺','K⁻']],
+ '✗ n → p + e⁻ + νₑ':[['n'],['p','e⁻','νₑ']],'✗ p + p → p + π⁺':[['p','p'],['p','π⁺']],'✗ p + π⁻ → K⁰ + n':[['p','π⁻'],['K⁰','n']]};
+const popts=`<option value="">—</option>`+Object.keys(PT).map(k=>`<option>${k}</option>`).join('');
+topic({id:'conservation',ref:'3.2.1.6',name:'Conservation laws',short:'Conservation',eyebrow:'Particle interactions',title:'Checking particle interactions',
+ intro:'Build an interaction, or load a classic one, and test it against each conservation law. Some rules only the strong interaction has to obey.',
+ bar:'left side vs right side totals',aspect:0.42,minH:220,
+ extra:`<div class="row"><label for="cs-pre">Load</label><select id="cs-pre">${Object.keys(PRE).map(k=>`<option>${k}</option>`).join('')}</select></div>
+ <div class="row">${[0,1].map(i=>`<select id="cs-l${i}" aria-label="left particle ${i+1}">${popts}</select>`).join(' + ')} <b>→</b> ${[0,1,2,3].map(i=>`<select id="cs-r${i}" aria-label="right particle ${i+1}">${popts}</select>`).join(' + ')}</div>
+ <div class="tblwrap"><table class="mini" id="cs-tab"></table></div>`,status:true,
+ eqTitle:'Always conserved',eqs:['charge Q','baryon number B','lepton number Lₑ and L_μ (separately)','energy and momentum'],
+ steps:['Add up <b>charge</b>, <b>baryon number</b> and the two <b>lepton numbers</b> on each side. Each must be equal, or the interaction cannot happen.',
+  'Electron lepton number and muon lepton number are conserved <b>separately</b>.','<b>Strangeness</b> is conserved in strong interactions. In <b>weak</b> interactions it can change by +1, −1 or 0.',
+  'Strange particles (kaons) are made in pairs by the strong interaction (strangeness conserved) and decay via the weak interaction (strangeness changes).',
+  'Quarks: u (+⅔, S 0), d (−⅓, S 0), s (−⅓, S −1). Baryon number ⅓ each. p = uud, n = udd, π⁺ = ud̄, K⁺ = us̄, K⁰ = ds̄.'],
+ traps:['Antiparticles have opposite charge, baryon number, lepton number and strangeness.','Forgetting that pions and kaons have baryon number 0 (they are mesons).','Mixing up Lₑ and L_μ: an electron neutrino cannot balance a muon.'],
+ tryThis:'load "K⁺ → π⁺ + π⁰". Which quantity is not conserved, and what does that tell you about the interaction?'});
+sims.conservation={init(){const pre=()=>{const p=PRE[$('cs-pre').value];[0,1].forEach(i=>$('cs-l'+i).value=p[0][i]||'');[0,1,2,3].forEach(i=>$('cs-r'+i).value=p[1][i]||'');this.update()};
+  $('cs-pre').addEventListener('change',pre);['cs-l0','cs-l1','cs-r0','cs-r1','cs-r2','cs-r3'].forEach(i=>$(i).addEventListener('change',()=>this.update()));
+  [0,1].forEach(i=>$('cs-l'+i).value=PRE['β⁻ decay'][0][i]||'');[0,1,2,3].forEach(i=>$('cs-r'+i).value=PRE['β⁻ decay'][1][i]||'');},
+ update(){const sum=ids=>ids.map(i=>$(i).value).filter(Boolean).reduce((a,k)=>a.map((v,j)=>v+PT[k][j]),[0,0,0,0,0]);
+  const L=sum(['cs-l0','cs-l1']),R=sum(['cs-r0','cs-r1','cs-r2','cs-r3']);this.L=L;this.R=R;const nm=['Q','B','Lₑ','L_μ','S'];
+  $('cs-tab').innerHTML='<tr><th></th>'+nm.map(n=>`<th>${n}</th>`).join('')+'</tr><tr><td>left</td>'+L.map(v=>`<td>${v}</td>`).join('')+'</tr><tr><td>right</td>'+R.map(v=>`<td>${v}</td>`).join('')+'</tr><tr><td></td>'+L.map((v,i)=>`<td>${v===R[i]?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}</td>`).join('')+'</tr>';
+  const bad=[0,1,2,3].filter(i=>L[i]!==R[i]).map(i=>nm[i]),dS=R[4]-L[4];
+  $('conservation-status').innerHTML=bad.length?`<span class="bad">Not allowed.</span> ${bad.join(', ')} not conserved.`:dS===0?`<span class="ok">Allowed.</span> Everything is conserved, so it could proceed by the strong interaction (if hadrons are involved) or another interaction.`:Math.abs(dS)===1?`<span class="ok">Allowed only as a weak interaction.</span> Strangeness changes by ${dS>0?'+':''}${dS}.`:`<span class="bad">Not allowed.</span> Strangeness changes by ${dS}.`;},
+ draw(ctx,w,h){bg(ctx,w,h);const L=this.L||[0,0,0,0,0],R=this.R||L,nm=['Q','B','Lₑ','L_μ','S'];const cw=(w-40)/5,mid=h*0.5,u=Math.min(22,h*0.17);line(ctx,20,mid,w-20,mid,C.muted,1);
+  nm.forEach((n,i)=>{const x=20+cw*i+cw/2;[[L[i],C.accent,-1],[R[i],C.wave2,1]].forEach(([v,c,s])=>{const bx=x+s*cw*0.14-cw*0.11;ctx.fillStyle=c;if(v)ctx.fillRect(bx,v>0?mid-v*u:mid,cw*0.22,Math.abs(v)*u);else ctx.fillRect(bx,mid-1,cw*0.22,2)});
+   const ok=L[i]===R[i]||i===4;label(ctx,n,x,h-14,i===4&&L[4]!==R[4]?C.wave2:ok?C.ink:C.node,'center',13,700)});
+  label(ctx,'■ left',24,14,C.accent,'left',11);label(ctx,'■ right',80,14,C.wave2,'left',11);}};
+Q.conservation=[
+ {m:2,q:`<p>Use lepton number to explain why β⁻ decay must produce an <b>anti</b>neutrino.</p>`,a:`<p>Left side: n has Lₑ = 0. The electron has Lₑ = +1, so the other lepton must have Lₑ = −1 to keep the total 0: an electron <b>anti</b>neutrino.</p>`},
+ {m:3,q:`<p>Show whether p + p → p + n + π⁺ is possible.</p>`,a:`<div class="work">Q: 1+1 = 2 → 1+0+1 = 2 ✓
+B: 2 → 1+1+0 = 2 ✓
+L: 0 → 0 ✓ ;  S: 0 → 0 ✓</div><p class="final">Allowed</p>`},
+ {m:2,q:`<p>K⁺ → π⁺ + π⁰. Which quantity is not conserved, and what does this tell you about the interaction?</p>`,a:`<p>Strangeness: +1 → 0. So the decay must be a <b>weak</b> interaction (strangeness is only conserved in the strong interaction).</p>`},
+ {m:2,q:`<p>State the quark composition of a K⁻ and its strangeness.</p>`,a:`<p class="final">sū, strangeness −1</p>`},
+ {m:2,q:`<p>Show that lepton numbers are conserved in μ⁻ → e⁻ + ν̄ₑ + ν_μ.</p>`,a:`<div class="work">L_μ: 1 → 0 + 0 + 1 = 1 ✓
+Lₑ: 0 → 1 + (−1) + 0 = 0 ✓</div>`}];
+
+/* ===== FEYNMAN ===== */
+const FD={
+ bm:{name:'β⁻ decay',inL:['n'],outL:['p'],bos:'W⁻',inR:null,outR:['e⁻','ν̄ₑ'],int:'weak',q:'d → u',text:'A neutron emits a W⁻ boson and becomes a proton. The W⁻ decays into an electron and an electron antineutrino.'},
+ bp:{name:'β⁺ decay',inL:['p'],outL:['n'],bos:'W⁺',inR:null,outR:['e⁺','νₑ'],int:'weak',q:'u → d',text:'A proton (in a nucleus) emits a W⁺ and becomes a neutron. The W⁺ decays into a positron and an electron neutrino.'},
+ ec:{name:'Electron capture',inL:['p'],outL:['n'],bos:'W⁺',inR:'e⁻',outR:['νₑ'],int:'weak',q:'u → d',text:'A proton absorbs an inner-shell electron. AQA shows the W⁺ going from the proton to the electron.'},
+ epc:{name:'e⁻–p collision',inL:['p'],outL:['n'],bos:'W⁻',inR:'e⁻',outR:['νₑ'],int:'weak',q:'u → d',text:'A high-energy electron hits a proton. The electron becomes a neutrino by emitting a W⁻, which the proton absorbs to become a neutron.'},
+ em:{name:'e⁻–e⁻ repulsion',inL:['e⁻'],outL:['e⁻'],bos:'γ',inR:'e⁻',outR:['e⁻'],int:'electromagnetic',q:'none',text:'Two electrons exchange a virtual photon. This is how the electromagnetic force acts.'}};
+topic({id:'feynman',ref:'3.2.1.4',name:'Exchange particles',short:'Feynman',eyebrow:'Particles, antiparticles and photons',title:'Exchange particles and Feynman diagrams',
+ intro:'Feynman diagrams show interactions as particles meeting at points (vertices), with an exchange particle carrying the force between them. Time runs upwards.',animated:true,
+ bar:'time ↑',aspect:0.62,minH:280,
+ segs:[{id:'fy-type',opts:Object.entries(FD).map(([k,v])=>[k,v.name])}],
+ readouts:[{id:'fy-bos',label:'exchange particle'},{id:'fy-int',label:'interaction'},{id:'fy-q',label:'quark change'}],status:true,
+ eqTitle:'Four interactions',eqs:['electromagnetic: virtual photon γ','weak: W⁺, W⁻','strong (between nucleons): pion','gravity: not needed'],
+ steps:['Forces between particles are caused by <b>exchange particles</b>. Draw the incoming particles at the bottom and the outgoing ones at the top.',
+  'Charge is conserved at every <b>vertex</b>. That decides whether the W is W⁺ or W⁻.','In β⁻ decay a <b>d quark becomes a u quark</b> (udd → uud). In β⁺ decay a u becomes a d.',
+  'Electron capture and electron–proton collisions both turn p + e⁻ into n + νₑ via the weak interaction.','W bosons have mass, so the weak interaction has a very short range. The photon is massless, so the electromagnetic interaction has infinite range.'],
+ traps:['Drawing time from left to right but labelling as if it runs upward.','Putting the wrong charge on the W: check charge at each vertex.','Writing ν instead of ν̄ (or the reverse) in β decays.','Lines do not show particle paths in space.'],
+ tryThis:'compare electron capture with the electron–proton collision. What is the same, and which boson differs?'});
+sims.feynman={update(){const d=FD[segVal('fy-type')];this.d=d;$('fy-bos').textContent=d.bos==='γ'?'virtual photon γ':d.bos;$('fy-int').textContent=d.int;$('fy-q').textContent=d.q;$('feynman-status').innerHTML=d.text;},
+ draw(ctx,w,h,t){bg(ctx,w,h);const d=this.d;const A=[w*0.32,h*0.5],B=[w*0.68,d.inR?h*0.5:h*0.42],ph=(t*0.35)%1;
+  const ferm=(p,q,lab,lpos)=>{arrow(ctx,p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2,C.ink,2.2,9);line(ctx,(p[0]+q[0])/2,(p[1]+q[1])/2,q[0],q[1],C.ink,2.2);label(ctx,lab,lpos[0],lpos[1],C.ink,'center',14,700)};
+  const inL=[w*0.24,h*0.9],outL=[w*0.24,h*0.1];ferm(inL,A,d.inL[0],[inL[0]-18,inL[1]]);ferm(A,outL,d.outL[0],[outL[0]-18,outL[1]]);
+  let outs=[];if(d.inR){const inR=[w*0.76,h*0.9],o=[w*0.76,h*0.1];ferm(inR,B,d.inR,[inR[0]+20,inR[1]]);ferm(B,o,d.outR[0],[o[0]+22,o[1]]);outs=[o]}
+  else{const o1=[w*0.62,h*0.08],o2=[w*0.86,h*0.14];ferm(B,o1,d.outR[0],[o1[0]-16,o1[1]]);ferm(B,o2,d.outR[1],[o2[0]+20,o2[1]]);outs=[o1,o2]}
+  ctx.strokeStyle=C.wave2;ctx.lineWidth=2.2;ctx.beginPath();const n=60;for(let i=0;i<=n;i++){const f=i/n,x=A[0]+(B[0]-A[0])*f,y=A[1]+(B[1]-A[1])*f,a=Math.atan2(B[1]-A[1],B[0]-A[0])+Math.PI/2,o=(d.bos==='γ'?6*Math.sin(f*Math.PI*10):5*Math.sin(f*Math.PI*14));i?ctx.lineTo(x+o*Math.cos(a),y+o*Math.sin(a)):ctx.moveTo(x,y)}ctx.stroke();
+  label(ctx,d.bos,(A[0]+B[0])/2,(A[1]+B[1])/2-20,C.wave2,'center',15,700);dot(ctx,A[0],A[1],5,C.ink);dot(ctx,B[0],B[1],5,C.ink);
+  const seg=(p,q,f)=>[p[0]+(q[0]-p[0])*f,p[1]+(q[1]-p[1])*f];let P1,P2;
+  if(ph<0.4){P1=seg(inL,A,ph/0.4);if(d.inR)P2=seg([w*0.76,h*0.9],B,ph/0.4)}else if(ph<0.6){P1=seg(A,B,(ph-0.4)/0.2)}else{P1=seg(A,outL,(ph-0.6)/0.4);P2=seg(B,outs[0],(ph-0.6)/0.4)}
+  [P1,P2].forEach(p=>p&&dot(ctx,p[0],p[1],5,C.accent));label(ctx,'time',16,h*0.2,C.muted,'left',10);arrow(ctx,22,h*0.8,22,h*0.28,C.muted,1.2,7);}};
+Q.feynman=[
+ {m:3,q:`<p>Describe the Feynman diagram for β⁺ decay.</p>`,a:`<p>A proton line comes in from the bottom and leaves as a neutron. At that vertex a <b>W⁺</b> is emitted. The W⁺ decays at a second vertex into a <b>positron</b> and an <b>electron neutrino</b>, both moving upward.</p>`},
+ {m:3,q:`<p>Name the exchange particle for (a) the electromagnetic force, (b) the weak interaction, (c) the strong force between nucleons.</p>`,a:`<p class="final">(a) virtual photon (b) W⁺ or W⁻ boson (c) pion</p>`},
+ {m:2,q:`<p>Describe what happens at the quark level in β⁻ decay.</p>`,a:`<p>A down quark changes into an up quark (udd → uud), emitting a W⁻ that decays into an electron and an electron antineutrino.</p>`},
+ {m:2,q:`<p>Electron capture and an electron–proton collision both produce n + νₑ. How do their Feynman diagrams differ, as AQA draws them?</p>`,a:`<p>In electron capture the proton emits a <b>W⁺</b>, absorbed by the electron. In the collision the electron emits a <b>W⁻</b>, absorbed by the proton.</p>`},
+ {m:1,q:`<p>Explain why the weak interaction has a very short range.</p>`,a:`<p>Its exchange particles (W bosons) are very massive.</p>`}];
+
+/* ===== DE BROGLIE ===== */
+topic({id:'debroglie',ref:'3.2.2.4',name:'Wave–particle duality',short:'de Broglie',eyebrow:'Electron diffraction',title:'de Broglie wavelength and electron diffraction',
+ intro:'Electrons accelerated through a p.d. hit a thin graphite target and form diffraction rings. Change the voltage and see the rings change size.',
+ bar:'λ = h / mv',aspect:0.52,minH:250,
+ segs:[{id:'db-p',opts:[['e','Electron'],['p','Proton']]}],
+ controls:[{id:'db-V',label:'Accelerating p.d.',min:0.5,max:10,step:0.1,value:4,fmt:v=>fmt(v,1)+' kV'}],
+ readouts:[{id:'db-ek',label:'Eₖ = eV'},{id:'db-v',label:'speed v'},{id:'db-mom',label:'momentum p'},{id:'db-lam',label:'λ = h/p'}],
+ eqs:['λ = h / mv','eV = ½mv²','p = √(2mEₖ)'],
+ steps:['<b>Light</b> shows wave behaviour (diffraction, interference) and particle behaviour (photoelectric effect).','<b>Matter</b> does too: moving particles have a de Broglie wavelength λ = h/mv.',
+  'Electron diffraction is the <b>evidence</b>: electrons passing through graphite produce rings, a pattern only waves make.','Diffraction is noticeable when λ is about the same size as the gap. Atom spacing in graphite is ~10⁻¹⁰ m.',
+  'Higher accelerating p.d. → faster electrons → <b>shorter λ</b> → less diffraction → <b>smaller rings</b>.'],
+ traps:['Using λ = hc/E for an electron. That is for photons only.','Forgetting to convert kV to V.','A proton at the same speed has a much shorter λ because its mass is ~1840 times bigger.'],
+ tryThis:'switch to protons at the same voltage. Why do the rings almost vanish?'});
+sims.debroglie={update(){const V=num('db-V')*1e3,m=segVal('db-p')==='e'?ME:MP,ek=E*V,p=Math.sqrt(2*m*ek),lam=H/p;this.lam=lam;this.m=m;
+  $('db-ek').textContent=sci(ek)+' J';$('db-v').textContent=sci(p/m)+' m s⁻¹';$('db-mom').textContent=sci(p)+' kg m s⁻¹';$('db-lam').textContent=sci(lam)+' m';},
+ draw(ctx,w,h){bg(ctx,w,h);const cx=w*0.27,cy=h*0.5,R=Math.min(w*0.24,h*0.44);ctx.fillStyle='#0c1712';ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.fill();
+  const ref=H/Math.sqrt(2*ME*E*4000),r1=this.lam/ref*R*0.35;dot(ctx,cx,cy,6,'#9dffbf');
+  if(r1>1.5){[[1,0.9],[1.73,0.55]].forEach(([k,a])=>{const r=r1*k;if(r<R){ctx.strokeStyle=`rgba(125,255,168,${a})`;ctx.lineWidth=Math.max(2,r*0.08);ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.stroke()}})}
+  else label(ctx,'rings too small to see',cx,cy+R*0.3,'#9dffbf','center',11);label(ctx,'fluorescent screen',cx,h-10,C.muted,'center',10);
+  const P=Plot(ctx,{x:w*0.6,y:28,w:w*0.36,h:h-70},[0,10],[0,6]);P.axes('V / kV','λ / 10⁻¹¹ m',[2,4,6,8,10],[2,4,6]);
+  P.curve(v=>H/Math.sqrt(2*this.m*E*v*1e3)*1e11,this.m===ME?C.accent:C.wave2,2,0.3,10);const V=num('db-V');dot(ctx,P.X(V),P.Y(Math.min(6,this.lam*1e11)),5,C.node);}};
+Q.debroglie=[
+ {m:3,q:`<p>An electron is accelerated from rest through 5.0 kV. Calculate its de Broglie wavelength.</p>`,a:`<div class="work">Eₖ = 5000 × 1.60×10⁻¹⁹ = 8.0 × 10⁻¹⁶ J
+p = √(2mEₖ) = √(2 × 9.11×10⁻³¹ × 8.0×10⁻¹⁶) = 3.82 × 10⁻²³ kg m s⁻¹
+λ = h/p</div><p class="final">1.7 × 10⁻¹¹ m</p>`},
+ {m:2,q:`<p>A proton travels at the same speed as an electron. Compare their de Broglie wavelengths.</p>`,a:`<p>λ = h/mv, so at the same speed λ ∝ 1/m. The proton's wavelength is about <b>1840 times smaller</b>.</p>`},
+ {m:2,q:`<p>What does electron diffraction show, and why is graphite a suitable target?</p>`,a:`<p>It shows electrons behave as <b>waves</b>. The spacing between carbon atoms (~10⁻¹⁰ m) is similar to the electrons' wavelength, so diffraction is significant.</p>`},
+ {m:2,q:`<p>The accelerating voltage is increased. State and explain the effect on the diffraction rings.</p>`,a:`<p>Rings get <b>smaller</b> (closer together). The electrons go faster, so their momentum increases and λ = h/p decreases, giving less diffraction.</p>`},
+ {m:2,q:`<p>Find the speed of an electron with de Broglie wavelength 0.15 nm.</p>`,a:`<div class="work">v = h/(mλ) = 6.63×10⁻³⁴ / (9.11×10⁻³¹ × 1.5×10⁻¹⁰)</div><p class="final">4.9 × 10⁶ m s⁻¹</p>`}];
+
+/* ===== PRACTICE ===== */
+Q.practice=[
+ {t:'mc',m:1,q:`<p>What is the specific charge of a proton?</p><ol class="opts"><li>1.76 × 10¹¹ C kg⁻¹</li><li>9.58 × 10⁷ C kg⁻¹</li><li>4.82 × 10⁷ C kg⁻¹</li><li>1.60 × 10⁻¹⁹ C kg⁻¹</li></ol>`,a:`<p class="final">B</p><div class="work">1.60×10⁻¹⁹ / 1.67×10⁻²⁷</div>`},
+ {t:'conservation',m:2,q:`<p>Calculate the specific charge of a carbon-14 nucleus (¹⁴₆C).</p>`,a:`<div class="work">Q = 6 × 1.60×10⁻¹⁹ = 9.6 × 10⁻¹⁹ C
+m = 14 × 1.67×10⁻²⁷ = 2.34 × 10⁻²⁶ kg</div><p class="final">4.1 × 10⁷ C kg⁻¹</p>`},
+ {t:'photoelectric',m:2,q:`<p>Calculate the energy in eV of a photon of wavelength 450 nm.</p>`,a:`<div class="work">E = hc/λ = 6.63×10⁻³⁴ × 3.00×10⁸ / 4.50×10⁻⁷ = 4.42 × 10⁻¹⁹ J
+÷ 1.60×10⁻¹⁹</div><p class="final">2.76 eV</p>`},
+ {t:'mc',m:1,q:`<p>Which statement about the strong nuclear force is correct?</p><ol class="opts"><li>It is repulsive up to about 3 fm.</li><li>It is attractive up to about 3 fm and repulsive below about 0.5 fm.</li><li>It acts only between protons.</li><li>It has an infinite range.</li></ol>`,a:`<p class="final">B</p>`},
+ {t:'conservation',m:2,q:`<p>Write the equation for the α decay of uranium-238 (Z = 92) to thorium.</p>`,a:`<p class="final">²³⁸₉₂U → ²³⁴₉₀Th + ⁴₂α</p>`},
+ {t:'photoelectric',m:3,q:`<p>Calculate the minimum energy (in MeV) and the maximum wavelength of a photon that can produce an electron–positron pair. Rest energy of an electron = 0.511 MeV.</p>`,a:`<div class="work">E = 2 × 0.511 = 1.022 MeV = 1.64 × 10⁻¹³ J
+λ = hc/E</div><p class="final">1.02 MeV, 1.2 × 10⁻¹² m</p>`},
+ {t:'conservation',m:2,q:`<p>A proton and an antiproton at rest annihilate. Explain why two photons are produced, and give the energy of each. (Proton rest energy = 938 MeV.)</p>`,a:`<p>The total momentum before is zero, so it must be zero after: two photons moving in opposite directions. Each has energy <b>938 MeV</b>.</p>`},
+ {t:'conservation mc',m:1,q:`<p>Which of these is a hadron?</p><ol class="opts"><li>electron</li><li>muon</li><li>pion</li><li>neutrino</li></ol>`,a:`<p class="final">C</p>`},
+ {t:'conservation mc',m:1,q:`<p>What is the quark composition of a π⁻?</p><ol class="opts"><li>ud̄</li><li>dū</li><li>uū</li><li>ds̄</li></ol>`,a:`<p class="final">B</p><p>Charge −⅓ − ⅔ = −1.</p>`},
+ {t:'photoelectric',m:3,q:`<p>UV of frequency 1.2 × 10¹⁵ Hz falls on zinc (φ = 4.3 eV). Calculate the maximum speed of the emitted electrons.</p>`,a:`<div class="work">hf = 7.96 × 10⁻¹⁹ J ; φ = 6.88 × 10⁻¹⁹ J
+Eₖ = 1.08 × 10⁻¹⁹ J
+v = √(2Eₖ/m) = √(2 × 1.08×10⁻¹⁹ / 9.11×10⁻³¹)</div><p class="final">4.9 × 10⁵ m s⁻¹</p>`},
+ {t:'levels mc',m:1,q:`<p>Hydrogen: n = 1 is −13.6 eV, n = 2 is −3.4 eV. The photon emitted from n = 2 → n = 1 is in which region?</p><ol class="opts"><li>infrared</li><li>visible</li><li>ultraviolet</li><li>X-ray</li></ol>`,a:`<p class="final">C</p><p>10.2 eV → λ = 122 nm.</p>`},
+ {t:'levels',m:1,q:`<p>Define the electronvolt.</p>`,a:`<p>The energy transferred when an electron moves through a potential difference of 1 volt: 1.60 × 10⁻¹⁹ J.</p>`},
+ {t:'debroglie',m:2,q:`<p>Find the de Broglie wavelength of a neutron moving at 2.0 km s⁻¹.</p>`,a:`<div class="work">λ = 6.63×10⁻³⁴ / (1.67×10⁻²⁷ × 2.0×10³)</div><p class="final">2.0 × 10⁻¹⁰ m</p>`},
+ {t:'debroglie',m:2,q:`<p>Electron diffraction with graphite gives rings, not spots. Explain why.</p>`,a:`<p>The graphite is <b>polycrystalline</b>: many small crystals at random orientations, so electrons diffract at the same angle in all directions around the beam, forming rings.</p>`},
+ {t:'conservation',m:2,q:`<p>State how an antiparticle compares with its particle.</p>`,a:`<p>Same mass and rest energy; opposite charge (if charged), opposite baryon number, lepton number and strangeness.</p>`},
+ {t:'conservation',m:2,q:`<p>Show that μ⁺ → e⁺ + νₑ + ν̄_μ conserves lepton numbers.</p>`,a:`<div class="work">L_μ: −1 → 0 + 0 + (−1) ✓
+Lₑ: 0 → −1 + 1 + 0 = 0 ✓</div>`},
+ {t:'feynman',m:2,q:`<p>Write the quark-level equation for β⁺ decay.</p>`,a:`<p class="final">u → d + e⁺ + νₑ (via a W⁺)</p>`},
+ {t:'levels',m:2,q:`<p>Why do line spectra provide evidence for discrete energy levels?</p>`,a:`<p>Only specific wavelengths are emitted. Each corresponds to one photon energy, so electrons can only move between fixed energy values.</p>`},
+ {t:'photoelectric extended',m:6,q:`<p>Explain the photoelectric effect and how it provides evidence for the particle nature of electromagnetic radiation.</p>`,a:`<p><b>Level 3 answer covers:</b></p><ul><li>Electrons emitted from a metal surface when EM radiation above a threshold frequency falls on it.</li><li>Photon energy hf; one photon interacts with one electron; work function φ; hf = φ + E<sub>k(max)</sub>.</li><li>Below f₀ no emission regardless of intensity; emission is instantaneous.</li><li>Intensity affects number of electrons per second, not E<sub>k(max)</sub>.</li><li>Wave theory predicts emission at any frequency given time, and E<sub>k</sub> depending on intensity: it fails, so radiation must arrive in discrete packets (photons).</li></ul>`},
+ {t:'levels extended',m:6,q:`<p>Describe how a line emission spectrum is produced and how a line absorption spectrum differs. Explain what both show about atoms.</p>`,a:`<p><b>Level 3 answer covers:</b></p><ul><li>Atoms excited (by heating or collisions); electrons move to higher levels.</li><li>De-excitation emits photons with hf = E₁ − E₂: specific wavelengths → bright lines on a dark background.</li><li>Absorption: white light through cool gas; photons with energy exactly matching gaps are absorbed → dark lines in a continuous spectrum, at the same wavelengths.</li><li>Absorbed energy is re-emitted in all directions, so those wavelengths appear dark.</li><li>Shows electrons occupy discrete energy levels unique to each element.</li></ul>`}];
+
+/* ---------- build page ---------- */
+(function build(){
+  const S=SECTION;
+  const ctlHTML=c=>`<div class="ctl"><label for="${c.id}">${c.label} <output id="${c.id}-o"></output></label><input type="range" id="${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.value}"></div>`;
+  const segHTML=s=>`<div class="seg" id="${s.id}">${s.opts.map((o,i)=>`<button type="button" aria-pressed="${i===(s.sel||0)}" data-v="${o[0]}">${o[1]}</button>`).join('')}</div>`;
+  const chkHTML=c=>`<label class="check"><input type="checkbox" id="${c.id}"${c.checked?' checked':''}> ${c.label}</label>`;
+  const panel=t=>`
+<section class="panel" role="tabpanel" data-panel="${t.id}" hidden>
+  <div class="panel-head"><div><div class="eyebrow">${t.eyebrow}</div><h2>${t.title}</h2><p>${t.intro}</p></div></div>
+  <div class="lab">
+    <div class="scope">
+      <div class="scope-bar"><span id="${t.id}-bar">${t.bar||''}</span>${t.animated?`<button class="pause" type="button" data-pause="${t.id}">Pause</button>`:''}</div>
+      <canvas id="c-${t.id}" aria-label="${t.canvasLabel||t.title}"></canvas>
+      ${(t.segs||t.checks)?`<div class="toggles">${(t.segs||[]).map(segHTML).join('')}${(t.checks||[]).map(chkHTML).join('')}</div>`:''}
+      ${t.controls?`<div class="controls">${t.controls.map(ctlHTML).join('')}</div>`:''}
+      ${t.extra?`<div class="extra">${t.extra}</div>`:''}
+      ${t.readouts?`<dl class="readout">${t.readouts.map(r=>`<div${r.wide?' style="grid-column:1/-1"':''}><dt>${r.label}</dt><dd id="${r.id}"></dd></div>`).join('')}</dl>`:''}
+      ${t.status?`<div class="status" id="${t.id}-status"></div>`:''}
+    </div>
+    <div class="notes">
+      <div class="eqbox"><h3>${t.eqTitle||'Key equations'}</h3><div class="eq">${t.eqs.map(e=>`<span>${e}</span>`).join('')}</div></div>
+      <div><h3>Breaking it down</h3><ol class="steps">${t.steps.map(s=>`<li><div>${s}</div></li>`).join('')}</ol></div>
+      <div class="traps"><h3>Common traps</h3><ul>${t.traps.map(s=>`<li>${s}</li>`).join('')}</ul></div>
+      ${t.tryThis?`<p class="try"><b>Try this:</b> ${t.tryThis}</p>`:''}
+    </div>
+  </div>
+  <div class="qhead"><h3>Questions: ${t.name.toLowerCase()}</h3><p>Turn a card over to check your answer.</p></div>
+  <div class="qgrid" data-qset="${t.id}"></div>
+</section>`;
+  const chips=[['all','All'],['mc','Multiple choice'],...TOPICS.map(t=>[t.id,t.short||t.name]),['extended','6-mark']];
+  document.getElementById('app').innerHTML=`
+<div class="wrap"><header class="top">
+  <div class="eyebrow">AQA A-level Physics 7408 · ${S.code}</div>
+  <h1>${S.title}</h1><p class="lede">${S.lede}</p></header></div>
+<nav class="tabs" aria-label="Topics"><div class="wrap"><div class="tabrow" role="tablist" id="tablist">
+  ${TOPICS.map(t=>`<button class="tab" type="button" role="tab" data-tab="${t.id}"><span class="ref">${t.ref}</span><span class="nm">${t.name}</span></button>`).join('')}
+  <button class="tab practice" type="button" role="tab" data-tab="practice"><span class="ref">Mixed</span><span class="nm">Exam practice</span></button>
+</div></div></nav>
+<main class="wrap">
+${TOPICS.map(panel).join('')}
+<section class="panel" role="tabpanel" data-panel="practice" hidden>
+  <div class="panel-head"><div><div class="eyebrow">Mixed exam-style questions</div><h2>Exam practice</h2>
+  <p>A-level style questions across ${S.name}: multiple choice, calculations, explanations and extended response. Write your answer down first, then turn the card over to mark it.</p></div></div>
+  <div class="filters" id="filters">${chips.map((c,i)=>`<button class="chip" type="button" aria-pressed="${i===0}" data-f="${c[0]}">${c[1]}</button>`).join('')}
+    <span class="tally" id="tally"></span><button class="ghost" type="button" id="reset">Turn all cards back</button></div>
+  <div class="qgrid" data-qset="practice"></div>
+</section>
+</main>
+<div class="wrap"><footer>${S.footer||'Built for AQA 7408 revision. Data and formulae as on the AQA data and formulae booklet.'}</footer></div>`;
+})();
+
+/* ---------- question cards ---------- */
+function card(item,idx,lab){
+  const el=document.createElement('article');el.className='qcard';el.dataset.tags=item.t||'';
+  el.innerHTML=`<div class="qmeta"><span class="side">${lab} ${idx+1}</span><span class="mk">${item.m} mark${item.m>1?'s':''}</span></div>
+    <div class="qbody front">${item.q}</div>
+    <div class="qbody ans back" hidden><div class="tagline" style="margin-bottom:6px">Answer</div>${item.a}</div>
+    <button class="flip" type="button">Show answer</button>`;
+  const btn=el.querySelector('.flip'),front=el.querySelector('.front'),back=el.querySelector('.back'),side=el.querySelector('.side');
+  btn.addEventListener('click',()=>{const show=back.hidden;back.hidden=!show;front.hidden=show;el.classList.toggle('flipped',show);
+    btn.textContent=show?'Back to question':'Show answer';side.textContent=(show?'Answer ':lab+' ')+(idx+1);});
+  return el;}
+document.querySelectorAll('[data-qset]').forEach(g=>{const set=g.dataset.qset;(Q[set]||[]).forEach((it,i)=>g.appendChild(card(it,i,set==='practice'?'P':'Q')))});
+const pgrid=document.querySelector('[data-qset="practice"]');
+function applyFilter(f){let n=0,marks=0;pgrid.querySelectorAll('.qcard').forEach((c,i)=>{const show=f==='all'||c.dataset.tags.split(' ').includes(f);c.hidden=!show;if(show){n++;marks+=Q.practice[i].m}});
+  $('tally').textContent=`${n} questions · ${marks} marks`;}
+$('filters').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));applyFilter(b.dataset.f)});
+$('reset').addEventListener('click',()=>pgrid.querySelectorAll('.qcard.flipped .flip').forEach(b=>b.click()));
+applyFilter('all');
+
+/* ---------- theme ---------- */
+readTokens();
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTokens)}catch(e){}
+new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});
+
+/* ---------- wire controls ---------- */
+TOPICS.forEach(t=>{const s=sims[t.id]||{};const upd=()=>{(t.controls||[]).forEach(c=>setOut(c.id,c.fmt?c.fmt(+$(c.id).value):$(c.id).value));s.update&&s.update()};
+  (t.controls||[]).forEach(c=>$(c.id).addEventListener('input',upd));
+  (t.checks||[]).forEach(c=>$(c.id).addEventListener('change',upd));
+  (t.segs||[]).forEach(sg=>$(sg.id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setSeg(sg.id,b.dataset.v);s.onSeg&&s.onSeg(sg.id,b.dataset.v);upd()}));
+  s.init&&s.init();upd();t._upd=upd;});
+
+/* ---------- tabs + animation ---------- */
+const tabs=[...document.querySelectorAll('.tab')];let active=TOPICS[0].id;const times={},paused={};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function show(id,push){if(!document.querySelector(`[data-panel="${id}"]`))id=TOPICS[0].id;active=id;
+  tabs.forEach(t=>{const on=t.dataset.tab===id;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1});
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.panel!==id);
+  if(push&&location.hash!=='#'+id){try{history.replaceState(null,'','#'+id)}catch(e){}}
+  const t=tabs.find(t=>t.dataset.tab===id);t&&t.scrollIntoView({block:'nearest',inline:'nearest'});
+  drawActive();}
+tabs.forEach(t=>t.addEventListener('click',()=>{show(t.dataset.tab,true);window.scrollTo({top:0})}));
+$('tablist').addEventListener('keydown',e=>{const i=tabs.findIndex(t=>t.dataset.tab===active);let j=i;
+  if(e.key==='ArrowRight')j=(i+1)%tabs.length;else if(e.key==='ArrowLeft')j=(i-1+tabs.length)%tabs.length;else return;
+  e.preventDefault();show(tabs[j].dataset.tab,true);tabs[j].focus();});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+document.querySelectorAll('[data-pause]').forEach(b=>{const k=b.dataset.pause;paused[k]=reduce;b.textContent=reduce?'Play':'Pause';
+  b.addEventListener('click',()=>{paused[k]=!paused[k];b.textContent=paused[k]?'Play':'Pause'})});
+function drawActive(){const s=sims[active],t=TOPICS.find(x=>x.id===active);if(!s||!s.draw)return;const cv=$('c-'+active);
+  const{ctx,w,h}=sizeCanvas(cv,t.aspect||0.55,t.minH||240);s.draw(ctx,w,h,times[active]||0);}
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;const s=sims[active],t=TOPICS.find(x=>x.id===active);
+  if(s&&t){if(t.animated&&!paused[active]){times[active]=(times[active]||0)+dt;s.step&&s.step(dt,times[active])}drawActive()}
+  requestAnimationFrame(loop)}
+show(location.hash.slice(1)||TOPICS[0].id);requestAnimationFrame(loop);
+
+</script>
+
+</body></html>
